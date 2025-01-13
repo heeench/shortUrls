@@ -92,11 +92,16 @@ public class UrlService {
         return url.getOriginalUrl();
     }
 
-    public boolean deleteUrl(UUID uuid, Long urlId) {
-        if (!userRepository.existsById(uuid)
-                || !userRepository.findById(uuid).equals(urlRepository.findCreatorUuidById(urlId))
-                || !urlRepository.existsById(urlId)) {
-            throw new IllegalArgumentException("Ссылка не принадлежит вам");
+    public boolean deleteUrl(UUID userUuid, Long urlId) {
+        if (!userRepository.existsById(userUuid)) {
+            throw new IllegalArgumentException("Пользователь не найден");
+        }
+
+        Url url = urlRepository.findById(urlId)
+                .orElseThrow(() -> new IllegalArgumentException("Ссылка не найдена"));
+
+        if (!url.getCreator().getId().equals(userUuid)) {
+            throw new IllegalArgumentException("Вы не являетесь владельцем этой ссылки");
         }
 
         urlRepository.deleteById(urlId);
@@ -117,7 +122,6 @@ public class UrlService {
         urlRepository.save(url);
         return true;
     }
-
 
     public boolean updateExpirationTime(UUID userUuid, Long urlId, Long lifetimeSec) {
         Url url = urlRepository.findById(urlId)
